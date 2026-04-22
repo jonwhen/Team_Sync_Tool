@@ -1,4 +1,36 @@
-/* --- Name prompt overlay --- */
+/* === Global (Consistency + Simplicity) === */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #f0f4f8, #e8edf3);
+  color: #1f2937;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4cad3;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* === Welcome overlay (Clarity) === */
 
 .name-overlay {
   position: fixed;
@@ -6,25 +38,93 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(124,58,237,0.12));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 50;
 }
 
 .name-card {
   background: white;
-  border-radius: 12px;
-  padding: 24px 28px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  width: 340px;
+  border-radius: 16px;
+  padding: 32px 32px 28px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  width: 360px;
+  text-align: center;
 }
 
-/* --- Tab bar --- */
+.welcome-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  margin: 0 auto 16px;
+  display: block;
+}
+
+.name-card h2 {
+  color: #1e293b;
+}
+
+.name-card form button[type="submit"] {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+  font-weight: 600;
+}
+
+.name-card form button[type="submit"]:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* === Header (Hierarchy + Clarity) === */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  margin: 0 -16px 16px;
+  width: calc(100% + 32px);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.header-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  margin: -10px 0;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* === Tab bar (Feedback + Consistency) === */
 
 .tab-bar {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .tab-btn {
@@ -36,7 +136,7 @@
   background: #fff;
   color: #6b7280;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: all 0.2s ease;
 }
 
 .tab-btn:hover {
@@ -44,17 +144,17 @@
 }
 
 .tab-btn.active {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #fff;
-  border-color: #3b82f6;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
 }
 
-/* --- Meeting selector --- */
+/* === Meeting selector === */
 
 .meeting-selector {
   display: flex;
   justify-content: center;
-  margin-top: 8px;
 }
 
 .meeting-selector select {
@@ -66,6 +166,7 @@
   color: #374151;
   cursor: pointer;
   min-width: 260px;
+  font-family: inherit;
 }
 
 .meeting-selector select:focus {
@@ -74,12 +175,12 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
-/* --- App layout --- */
+/* === App layout === */
 
 .app-layout {
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
+  padding: 0 16px 24px;
 }
 
 .app-layout header {
@@ -87,7 +188,30 @@
   margin-bottom: 12px;
 }
 
-/* --- Attendees bar --- */
+/* === Clear Meeting button === */
+
+.clear-meeting-btn {
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid #fca5a5;
+  border-radius: 9999px;
+  background: #fff;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.clear-meeting-btn:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.clear-meeting-btn:active {
+  transform: scale(0.97);
+}
+
+/* === Attendees bar (Clarity) === */
 
 .attendees-bar {
   display: flex;
@@ -96,7 +220,11 @@
   gap: 6px;
   width: 100%;
   margin: 0 0 12px;
-  padding: 0 4px;
+  padding: 8px 14px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-left: 3px solid #0d9488;
 }
 
 .attendees-label {
@@ -107,27 +235,57 @@
 
 .attendee-pill {
   display: inline-block;
-  padding: 2px 10px;
+  padding: 3px 12px;
   font-size: 0.78rem;
   font-weight: 500;
   color: #1e40af;
   background: #dbeafe;
   border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* --- 3-column meeting grid --- */
+/* === Cards: subtle border + colored section headers (Hierarchy) === */
+
+.resources-card,
+.agenda-card,
+.shoutouts-card,
+.notes-card {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Section header accents */
+.resources-card > .flex:first-child h2 {
+  padding-left: 10px;
+  border-left: 3px solid #7c3aed;
+}
+
+.agenda-card > .flex:first-child h2 {
+  padding-left: 10px;
+  border-left: 3px solid #3b82f6;
+}
+
+.shoutouts-card > .flex:first-child h2 {
+  padding-left: 10px;
+  border-left: 3px solid #f59e0b;
+}
+
+.notes-card > .flex:first-child h2 {
+  padding-left: 10px;
+  border-left: 3px solid #10b981;
+}
+
+/* === 3-column meeting grid === */
 
 .meeting-grid {
   display: grid;
   grid-template-columns: 1fr 2fr 1.2fr;
   gap: 16px;
   width: 100%;
-  /* Fill viewport height minus header/attendees area */
-  height: calc(100vh - 180px);
+  height: calc(100vh - 220px);
   min-height: 500px;
 }
 
-/* --- Left column: Resources --- */
+/* === Left column: Resources === */
 
 .resources-card {
   display: flex;
@@ -220,7 +378,7 @@
   background: #fee2e2;
 }
 
-/* --- Center column --- */
+/* === Center column === */
 
 .center-column {
   display: flex;
@@ -230,7 +388,7 @@
   overflow: hidden;
 }
 
-/* --- Agenda card --- */
+/* === Agenda card === */
 
 .agenda-card {
   display: flex;
@@ -246,13 +404,12 @@
   min-height: 0;
 }
 
-/* --- Action Items card --- */
+/* === Action Items card === */
 
 .action-items-card {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Action items take roughly 60% of center */
   flex: 3;
   min-height: 0;
 }
@@ -263,7 +420,7 @@
   min-height: 0;
 }
 
-/* --- Notes card (right column) --- */
+/* === Notes card (right column) === */
 
 .notes-card {
   display: flex;
@@ -280,20 +437,36 @@
   min-height: 0;
 }
 
-/* --- Timer (fixed top-right) --- */
+/* === Buttons (Feedback) === */
 
-.timer-fixed {
-  position: fixed;
-  top: 16px;
-  right: 16px;
+button.px-4 {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.25);
+  transition: all 0.2s ease;
+}
+
+button.px-4:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+button.px-4:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.25);
+}
+
+/* === Timer (in header, right side) === */
+
+.timer-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fff;
-  padding: 8px 14px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  z-index: 40;
+  flex-shrink: 0;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .timer-display-idle {
@@ -338,7 +511,7 @@
   background: #16a34a;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s;
 }
 
 .timer-btn-start:hover {
@@ -354,7 +527,7 @@
   background: #fff;
   color: #374151;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s;
 }
 
 .timer-btn-extend:hover {
@@ -370,14 +543,14 @@
   background: #ef4444;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s;
 }
 
 .timer-btn-end:hover {
   background: #dc2626;
 }
 
-/* --- Agenda items --- */
+/* === Agenda items === */
 
 .agenda-item {
   padding: 8px 10px;
@@ -419,7 +592,7 @@
   color: #aaa;
 }
 
-/* --- Notes --- */
+/* === Notes === */
 
 .note-entry {
   padding: 6px 10px;
@@ -450,7 +623,7 @@
   color: #333;
 }
 
-/* --- Wins & Shoutouts --- */
+/* === Wins & Shoutouts === */
 
 .shoutouts-card {
   display: flex;
@@ -510,12 +683,16 @@
   background: #fee2e2;
 }
 
-/* --- Project Board --- */
+/* === Project Board === */
 
 #app.board-active {
   height: 100vh;
   overflow: hidden;
   align-items: stretch;
+}
+
+#app.board-active .app-header {
+  flex-shrink: 0;
 }
 
 #tab-board {
@@ -606,11 +783,12 @@
   padding: 14px 32px 14px 14px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   cursor: grab;
-  transition: opacity 0.15s, box-shadow 0.15s;
+  transition: all 0.2s ease;
 }
 
 .board-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.13);
+  transform: translateY(-1px);
 }
 
 .board-card.dragging {
@@ -662,7 +840,7 @@
   border-radius: 9999px;
 }
 
-/* --- Mobile responsive --- */
+/* === Mobile responsive === */
 
 @media (max-width: 1100px) {
   .meeting-grid {
@@ -673,6 +851,10 @@
     grid-column: 1 / -1;
     max-height: 300px;
   }
+  .app-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -680,10 +862,16 @@
     grid-template-columns: 1fr;
     height: auto;
   }
-  .timer-fixed {
-    top: auto;
-    bottom: 12px;
-    right: 12px;
-    padding: 6px 10px;
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .header-brand {
+    justify-content: center;
+  }
+  .header-center {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 }

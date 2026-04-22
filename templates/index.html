@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Team Sync Tool</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
+<body class="min-h-screen">
   <!-- Name prompt overlay -->
   <div id="name-overlay" class="name-overlay">
     <div class="name-card">
+      <img src="/static/logo.png" alt="Team Sync" class="welcome-logo">
       <h2 class="text-lg font-bold mb-2">Welcome to Team Sync</h2>
       <p class="text-gray-500 text-sm mb-4">Enter your name to join the meeting.</p>
       <form id="name-form" class="flex gap-2">
@@ -24,31 +28,35 @@
         <button
           type="submit"
           class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
-        >Join</button>
+        >Join Meeting</button>
       </form>
     </div>
   </div>
 
   <!-- Main app (hidden until name is entered) -->
   <div id="app" class="app-layout" style="display:none">
-    <header class="text-center mb-6">
-      <h1 class="text-2xl font-bold">Team Sync Tool</h1>
-      <div class="tab-bar">
-        <button class="tab-btn active" id="tab-btn-meeting">Meeting</button>
-        <button class="tab-btn" id="tab-btn-board">Project Board</button>
+    <header class="app-header">
+      <div class="header-brand">
+        <img src="/static/logo.png" alt="Team Sync" class="header-logo">
+        <span class="header-title">Team Sync</span>
       </div>
-      <div class="meeting-selector">
-        <select id="meeting-select"></select>
+      <div class="header-center">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tab-btn-meeting">Meeting</button>
+          <button class="tab-btn" id="tab-btn-board">Project Board</button>
+        </div>
+        <div class="meeting-selector">
+          <select id="meeting-select"></select>
+        </div>
+        <button class="clear-meeting-btn" id="clear-meeting-btn">Clear Meeting</button>
+      </div>
+      <div class="timer-group" id="timer-container">
+        <span id="timer-display" class="timer-display-idle">60:00</span>
+        <button class="timer-btn-start" id="timer-start-btn">Start Meeting</button>
+        <button class="timer-btn-extend" id="timer-extend-btn" style="display:none">+15m</button>
+        <button class="timer-btn-end" id="timer-end-btn" style="display:none">End</button>
       </div>
     </header>
-
-    <!-- Fixed top-right timer -->
-    <div class="timer-fixed" id="timer-container">
-      <span id="timer-display" class="timer-display-idle">60:00</span>
-      <button class="timer-btn-start" id="timer-start-btn">Start Meeting</button>
-      <button class="timer-btn-extend" id="timer-extend-btn" style="display:none">+15m</button>
-      <button class="timer-btn-end" id="timer-end-btn" style="display:none">End</button>
-    </div>
 
     <div id="tab-meeting">
 
@@ -182,7 +190,7 @@
               type="text"
               id="board-card-input"
               class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-              placeholder="New card title..."
+              placeholder="New project name..."
             >
             <input
               type="date"

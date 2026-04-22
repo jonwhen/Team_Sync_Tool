@@ -917,4 +917,22 @@ resourceUrlInput.addEventListener('keydown', (e) => {
 });
 clearResourcesBtn.addEventListener('click', clearResources);
 
+const clearMeetingBtn = document.getElementById('clear-meeting-btn');
+clearMeetingBtn.addEventListener('click', async () => {
+  if (!currentMeetingId) return;
+  if (!confirm('Clear all meeting data (agenda, notes, shoutouts, resources)? Project board will not be affected.')) return;
+  await Promise.all([
+    fetch(`${API_BASE}/meetings/${currentMeetingId}/items`, { method: 'DELETE' }),
+    fetch(`${API_BASE}/meetings/${currentMeetingId}/notes`, { method: 'DELETE' }),
+    fetch(`${API_BASE}/meetings/${currentMeetingId}/shoutouts`, { method: 'DELETE' }),
+    fetch(`${API_BASE}/meetings/${currentMeetingId}/resources`, { method: 'DELETE' }),
+  ]);
+  list.innerHTML = '';
+  updateEmpty();
+  notesList.innerHTML = '';
+  renderedNoteIds.clear();
+  document.getElementById('shoutouts-list').innerHTML = '';
+  resourcesListEl.innerHTML = '';
+});
+
 initNamePrompt();
