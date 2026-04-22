@@ -11,6 +11,7 @@ const input = document.getElementById('agenda-input');
 const addBtn = document.getElementById('add-btn');
 const list = document.getElementById('agenda-list');
 const emptyMsg = document.getElementById('empty-msg');
+const clearAgendaBtn = document.getElementById('clear-agenda-btn');
 
 // Notes elements
 const notesList = document.getElementById('notes-list');
@@ -21,6 +22,13 @@ const clearNotesBtn = document.getElementById('clear-notes-btn');
 let currentMeetingId = null;
 let renderedNoteIds = new Set();
 let notePollTimer = null;
+let boardPollTimer = null;
+
+// Board elements
+const boardCardInput = document.getElementById('board-card-input');
+const boardCardEta = document.getElementById('board-card-eta');
+const addCardBtn = document.getElementById('add-card-btn');
+const boardColumns = document.querySelectorAll('.board-column');
 
 // --- Name handling ---
 
@@ -203,9 +211,184 @@ async function loadOrCreateTodayMeeting() {
     meeting.notes.forEach((note) => renderNote(note));
   }
 
-  // Start polling for new notes
+  // Load board
+  if (meeting.board_cards) {
+    renderBoard(meeting.board_cards);
+  }
+  initBoardDragDrop();
+
+  // Start polling for new notes and board updates
   if (notePollTimer) clearInterval(notePollTimer);
   notePollTimer = setInterval(pollNotes, 5000);
+  if (boardPollTimer) clearInterval(boardPollTimer);
+  boardPollTimer = setInterval(pollBoard, 5000);
+}
+
+// --- Board ---
+
+function renderBoard(cards) {
+  boardColumns.forEach((col) => {
+    col.querySelector('.board-column-cards').innerHTML = '';
+  });
+  cards.forEach((card) => {
+    const col = document.querySelector(`.board-column[data-column="${card.column_name}"]`);
+    if (col) {
+      col.querySelector('.board-column-cards').appendChild(renderBoardCard(card));
+    }
+  });
+}
+
+function renderBoardCard(card) {
+  const div = document.createElement('div');
+  div.className = 'board-card';
+  div.draggable = true;
+  div.dataset.cardId = card.id;
+
+  const title = document.createElement('div');
+  title.className = 'board-card-title';
+  title.textContent = card.title;
+
+  const meta = document.createElement('div');
+  meta.className = 'board-card-meta';
+
+  const author = document.createElement('span');
+  author.textContent = card.author;
+
+  const time = document.createElement('span');
+  time.textContent = formatTime(card.created_at);
+
+  meta.appendChild(author);
+  meta.appendChild(time);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'board-card-delete';
+  deleteBtn.textContent = '\u00d7';
+  deleteBtn.addEventListener('click', () => deleteBoardCard(card.id));
+
+  div.appendChild(deleteBtn);
+  div.appendChild(title);
+
+  if (card.eta) {
+    const etaBadge = document.createElement('div');
+    etaBadge.className = 'board-card-eta';
+    const d = new Date(card.eta + 'T00:00:00');
+    const formatted = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    etaBadge.textContent = 'ETA: ' + formatted;
+    div.appendChild(etaBadge);
+  }
+
+  div.appendChild(meta);
+
+  div.addEventListener('dragstart', (e) => {
+    div.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', card.id);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  div.addEventListener('dragend', () => {
+    div.classList.remove('dragging');
+  });
+
+  return div;
+}
+
+function initBoardDragDrop() {
+  boardColumns.forEach((col) => {
+    const dropZone = col.querySelector('.board-column-cards');
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      dropZone.classList.add('drag-over');
+
+      const dragging = document.querySelector('.board-card.dragging');
+      if (!dragging) return;
+
+      const afterElement = getDragAfterElement(dropZone, e.clientY);
+      if (afterElement) {
+        dropZone.insertBefore(dragging, afterElement);
+      } else {
+        dropZone.appendChild(dragging);
+      }
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      if (!dropZone.contains(e.relatedTarget)) {
+        dropZone.classList.remove('drag-over');
+      }
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+
+      const cardId = e.dataTransfer.getData('text/plain');
+      const columnName = col.dataset.column;
+      const cards = [...dropZone.querySelectorAll('.board-card')];
+      const position = cards.findIndex((c) => c.dataset.cardId === cardId);
+
+      moveBoardCard(cardId, columnName, position >= 0 ? position : cards.length);
+    });
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const elements = [...container.querySelectorAll('.board-card:not(.dragging)')];
+  let closest = null;
+  let closestOffset = Number.NEGATIVE_INFINITY;
+
+  elements.forEach((child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closestOffset) {
+      closestOffset = offset;
+      closest = child;
+    }
+  });
+
+  return closest;
+}
+
+async function addBoardCard() {
+  const title = boardCardInput.value.trim();
+  const eta = boardCardEta.value;
+  const author = getUserName();
+  if (!title || !currentMeetingId || !author) return;
+
+  const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}/board`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, author, eta }),
+  });
+  const card = await res.json();
+  const todoCol = document.querySelector('.board-column[data-column="todo"] .board-column-cards');
+  todoCol.appendChild(renderBoardCard(card));
+  boardCardInput.value = '';
+  boardCardEta.value = '';
+  boardCardInput.focus();
+}
+
+async function moveBoardCard(cardId, columnName, position) {
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/board/${cardId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ column_name: columnName, position }),
+  });
+}
+
+async function deleteBoardCard(cardId) {
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/board/${cardId}`, {
+    method: 'DELETE',
+  });
+  const el = document.querySelector(`.board-card[data-card-id="${cardId}"]`);
+  if (el) el.remove();
+}
+
+async function pollBoard() {
+  if (!currentMeetingId) return;
+  const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}/board`);
+  const cards = await res.json();
+  renderBoard(cards);
 }
 
 async function clearNotes() {
@@ -217,6 +400,42 @@ async function clearNotes() {
   notesList.innerHTML = '';
   renderedNoteIds.clear();
 }
+
+async function clearAgenda() {
+  if (!currentMeetingId) return;
+  if (!confirm('Are you sure you want to clear all agenda items?')) return;
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/items`, {
+    method: 'DELETE',
+  });
+  list.innerHTML = '';
+  updateEmpty();
+}
+
+// --- Tabs ---
+
+const tabMeeting = document.getElementById('tab-meeting');
+const tabBoard = document.getElementById('tab-board');
+const tabBtnMeeting = document.getElementById('tab-btn-meeting');
+const tabBtnBoard = document.getElementById('tab-btn-board');
+
+function switchTab(tabName) {
+  if (tabName === 'board') {
+    tabMeeting.style.display = 'none';
+    tabBoard.style.display = 'flex';
+    tabBtnMeeting.classList.remove('active');
+    tabBtnBoard.classList.add('active');
+    appDiv.classList.add('board-active');
+  } else {
+    tabBoard.style.display = 'none';
+    tabMeeting.style.display = 'block';
+    tabBtnBoard.classList.remove('active');
+    tabBtnMeeting.classList.add('active');
+    appDiv.classList.remove('board-active');
+  }
+}
+
+tabBtnMeeting.addEventListener('click', () => switchTab('meeting'));
+tabBtnBoard.addEventListener('click', () => switchTab('board'));
 
 // --- Event listeners ---
 
@@ -230,5 +449,11 @@ noteInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addNote();
 });
 clearNotesBtn.addEventListener('click', clearNotes);
+clearAgendaBtn.addEventListener('click', clearAgenda);
+
+addCardBtn.addEventListener('click', addBoardCard);
+boardCardInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addBoardCard();
+});
 
 initNamePrompt();

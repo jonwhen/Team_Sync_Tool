@@ -37,6 +37,18 @@ def init_db():
             created_at TEXT NOT NULL,
             FOREIGN KEY (meeting_id) REFERENCES meetings(id)
         );
+        CREATE TABLE IF NOT EXISTS board_cards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            meeting_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            column_name TEXT NOT NULL DEFAULT 'todo',
+            position INTEGER NOT NULL DEFAULT 0,
+            author TEXT NOT NULL,
+            eta TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (meeting_id) REFERENCES meetings(id)
+        );
     """)
     conn.close()
 
@@ -78,10 +90,15 @@ def get_meeting_with_items(meeting_id):
         "SELECT * FROM notes WHERE meeting_id = ? ORDER BY created_at",
         (meeting_id,),
     ).fetchall()
+    board_cards = conn.execute(
+        "SELECT * FROM board_cards WHERE meeting_id = ? ORDER BY position",
+        (meeting_id,),
+    ).fetchall()
     conn.close()
     result = dict(meeting)
     result["items"] = [dict(i) for i in items]
     result["notes"] = [dict(n) for n in notes]
+    result["board_cards"] = [dict(c) for c in board_cards]
     return result
 
 
@@ -156,3 +173,82 @@ def delete_notes(meeting_id):
     conn.execute("DELETE FROM notes WHERE meeting_id = ?", (meeting_id,))
     conn.commit()
     conn.close()
+
+
+def delete_items(meeting_id):
+    conn = get_connection()
+    conn.execute("DELETE FROM agenda_items WHERE meeting_id = ?", (meeting_id,))
+    conn.commit()
+    conn.close()
+
+
+def get_board_cards(meeting_id):
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM board_cards WHERE meeting_id = ? ORDER BY position",
+        (meeting_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def add_board_card(meeting_id, title, author, eta=''):
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT COALESCE(MAX(position), -1) + 1 AS next_pos FROM board_cards WHERE meeting_id = ? AND column_name = 'todo'",
+        (meeting_id,),
+    ).fetchone()
+    next_pos = row["next_pos"]
+    created_at = datetime.now().isoformat()
+    cur = conn.execute(
+        "INSERT INTO board_cards (meeting_id, title, column_name, position, author, eta, created_at) VALUES (?, ?, 'todo', ?, ?, ?, ?)",
+        (meeting_id, title, next_pos, author, eta, created_at),
+    )
+    conn.commit()
+    card = conn.execute(
+        "SELECT * FROM board_cards WHERE id = ?", (cur.lastrowid,)
+    ).fetchone()
+    conn.close()
+    return dict(card)
+
+
+def move_board_card(meeting_id, card_id, column_name, position, eta=None):
+    conn = get_connection()
+    card = conn.execute(
+        "SELECT * FROM board_cards WHERE id = ? AND meeting_id = ?",
+        (card_id, meeting_id),
+    ).fetchone()
+    if not card:
+        conn.close()
+        return None
+    if eta is not None:
+        conn.execute(
+            "UPDATE board_cards SET column_name = ?, position = ?, eta = ? WHERE id = ?",
+            (column_name, position, eta, card_id),
+        )
+    else:
+        conn.execute(
+            "UPDATE board_cards SET column_name = ?, position = ? WHERE id = ?",
+            (column_name, position, card_id),
+        )
+    conn.commit()
+    updated = conn.execute(
+        "SELECT * FROM board_cards WHERE id = ?", (card_id,)
+    ).fetchone()
+    conn.close()
+    return dict(updated)
+
+
+def delete_board_card(meeting_id, card_id):
+    conn = get_connection()
+    card = conn.execute(
+        "SELECT * FROM board_cards WHERE id = ? AND meeting_id = ?",
+        (card_id, meeting_id),
+    ).fetchone()
+    if not card:
+        conn.close()
+        return False
+    conn.execute("DELETE FROM board_cards WHERE id = ?", (card_id,))
+    conn.commit()
+    conn.close()
+    return True

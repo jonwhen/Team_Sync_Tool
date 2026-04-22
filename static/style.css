@@ -18,6 +18,37 @@
   width: 340px;
 }
 
+/* --- Tab bar --- */
+
+.tab-bar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tab-btn {
+  padding: 6px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  background: #fff;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-btn:hover {
+  background: #f3f4f6;
+}
+
+.tab-btn.active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
+}
+
 /* --- Two-column layout --- */
 
 .app-layout {
@@ -64,6 +95,11 @@
 }
 
 /* --- Agenda items --- */
+
+.agenda-list-scroll {
+  max-height: 500px;
+  overflow-y: auto;
+}
 
 .agenda-item {
   padding: 8px 10px;
@@ -143,4 +179,156 @@
 .note-text {
   font-size: 0.85rem;
   color: #333;
+}
+
+/* --- Project Board --- */
+
+#app.board-active {
+  height: 100vh;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+#tab-board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.board-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
+
+.board-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.board-header h2 {
+  white-space: nowrap;
+}
+
+.board-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr 1fr;
+  flex: 1;
+  gap: 10px;
+  min-height: 0;
+  padding-bottom: 4px;
+}
+
+.board-column {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 0 0 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.board-column-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 12px 8px;
+  border-radius: 10px 10px 0 0;
+  color: #fff;
+}
+
+.board-column-header.todo { background: #3b82f6; }
+.board-column-header.in-progress { background: #f59e0b; }
+.board-column-header.in-review { background: #0ea5e9; }
+.board-column-header.blocked { background: #ef4444; }
+.board-column-header.parking-lot { background: #8b5cf6; }
+.board-column-header.done { background: #10b981; }
+
+.board-column-cards {
+  flex: 1;
+  min-height: 30px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.board-column-cards.drag-over {
+  background: #e0e7ff;
+  border-radius: 0 0 10px 10px;
+}
+
+.board-card {
+  position: relative;
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 32px 14px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  cursor: grab;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+
+.board-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.board-card.dragging {
+  opacity: 0.4;
+}
+
+.board-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.board-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.board-card-delete {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #d1d5db;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.board-card-delete:hover {
+  color: #ef4444;
+  background: #fee2e2;
+}
+
+.board-card-eta {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  border-radius: 9999px;
 }

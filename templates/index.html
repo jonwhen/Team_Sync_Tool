@@ -33,49 +33,113 @@
   <div id="app" class="app-layout" style="display:none">
     <header class="text-center mb-6">
       <h1 class="text-2xl font-bold">Team Sync Tool</h1>
-      <p class="text-gray-500 mt-1 text-sm">Meeting Agenda</p>
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tab-btn-meeting">Meeting</button>
+        <button class="tab-btn" id="tab-btn-board">Project Board</button>
+      </div>
     </header>
 
-    <div class="app-content">
-      <!-- Left column: agenda -->
-      <main class="agenda-card bg-white rounded-xl shadow-md p-6">
-          <div class="flex gap-2 mb-4" id="agenda-input-row">
+    <div id="tab-meeting">
+      <div class="app-content">
+        <!-- Left column: agenda -->
+        <main class="agenda-card bg-white rounded-xl shadow-md p-6">
+            <div class="flex justify-between items-center mb-3">
+              <h2 class="text-sm font-semibold text-gray-600">Agenda</h2>
+              <button
+                class="px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                id="clear-agenda-btn"
+              >Clear</button>
+            </div>
+            <div class="flex gap-2 mb-4" id="agenda-input-row">
+              <input
+                type="text"
+                id="agenda-input"
+                class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="Add an agenda item..."
+              >
+              <button
+                class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
+                id="add-btn"
+              >Add</button>
+            </div>
+            <p class="text-center text-gray-400 italic py-6 text-sm" id="empty-msg">No agenda items yet. Add one above.</p>
+            <div class="agenda-list-scroll">
+              <ol class="list-none p-0" id="agenda-list"></ol>
+            </div>
+        </main>
+
+        <!-- Right column: notes -->
+        <section class="notes-card bg-white rounded-xl shadow-md p-6">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-sm font-semibold text-gray-600">Meeting Notes</h2>
+            <button
+              class="px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors cursor-pointer"
+              id="clear-notes-btn"
+            >Clear</button>
+          </div>
+          <div id="notes-list" class="notes-list"></div>
+          <div class="flex gap-2 mt-3">
             <input
               type="text"
-              id="agenda-input"
+              id="note-input"
               class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-              placeholder="Add an agenda item..."
+              placeholder="Add a note..."
             >
             <button
               class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
-              id="add-btn"
-            >Add</button>
+              id="send-note-btn"
+            >Send</button>
           </div>
-          <p class="text-center text-gray-400 italic py-6 text-sm" id="empty-msg">No agenda items yet. Add one above.</p>
-          <ol class="list-none p-0" id="agenda-list"></ol>
-        </main>
+        </section>
+      </div>
+    </div>
 
-      <!-- Right column: notes -->
-      <section class="notes-card bg-white rounded-xl shadow-md p-6">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="text-sm font-semibold text-gray-600">Meeting Notes</h2>
-          <button
-            class="px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors cursor-pointer"
-            id="clear-notes-btn"
-          >Clear</button>
+    <div id="tab-board" style="display:none">
+      <section class="board-section">
+        <div class="board-header">
+          <div class="flex gap-2">
+            <input
+              type="text"
+              id="board-card-input"
+              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              placeholder="New card title..."
+            >
+            <input
+              type="date"
+              id="board-card-eta"
+              class="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+            >
+            <button
+              class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
+              id="add-card-btn"
+            >Add Card</button>
+          </div>
         </div>
-        <div id="notes-list" class="notes-list"></div>
-        <div class="flex gap-2 mt-3">
-          <input
-            type="text"
-            id="note-input"
-            class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-            placeholder="Add a note..."
-          >
-          <button
-            class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
-            id="send-note-btn"
-          >Send</button>
+        <div class="board-columns">
+          <div class="board-column" data-column="todo">
+            <div class="board-column-header todo">To Do</div>
+            <div class="board-column-cards"></div>
+          </div>
+          <div class="board-column" data-column="in_progress">
+            <div class="board-column-header in-progress">In Progress</div>
+            <div class="board-column-cards"></div>
+          </div>
+          <div class="board-column" data-column="done">
+            <div class="board-column-header done">Done</div>
+            <div class="board-column-cards"></div>
+          </div>
+          <div class="board-column" data-column="in_review">
+            <div class="board-column-header in-review">In Review</div>
+            <div class="board-column-cards"></div>
+          </div>
+          <div class="board-column" data-column="blocked">
+            <div class="board-column-header blocked">Blocked</div>
+            <div class="board-column-cards"></div>
+          </div>
+          <div class="board-column" data-column="parking_lot">
+            <div class="board-column-header parking-lot">Parking Lot</div>
+            <div class="board-column-cards"></div>
+          </div>
         </div>
       </section>
     </div>

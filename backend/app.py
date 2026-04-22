@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from database import init_db, get_meetings_past_week, create_meeting, get_meeting_with_items, add_agenda_item, toggle_item_checked, get_notes, add_note, delete_notes
+from database import init_db, get_meetings_past_week, create_meeting, get_meeting_with_items, add_agenda_item, toggle_item_checked, get_notes, add_note, delete_notes, delete_items, get_board_cards, add_board_card, move_board_card, delete_board_card
 
 app = Flask(__name__)
 
@@ -56,6 +56,12 @@ def toggle_item(meeting_id, item_id):
     return jsonify(item)
 
 
+@app.route("/api/meetings/<int:meeting_id>/items", methods=["DELETE"])
+def clear_items(meeting_id):
+    delete_items(meeting_id)
+    return jsonify({"ok": True})
+
+
 @app.route("/api/meetings/<int:meeting_id>/notes", methods=["GET"])
 def list_notes(meeting_id):
     return jsonify(get_notes(meeting_id))
@@ -75,6 +81,46 @@ def new_note(meeting_id):
 @app.route("/api/meetings/<int:meeting_id>/notes", methods=["DELETE"])
 def clear_notes(meeting_id):
     delete_notes(meeting_id)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/meetings/<int:meeting_id>/board", methods=["GET"])
+def list_board_cards(meeting_id):
+    return jsonify(get_board_cards(meeting_id))
+
+
+@app.route("/api/meetings/<int:meeting_id>/board", methods=["POST"])
+def new_board_card(meeting_id):
+    data = request.get_json()
+    title = data.get("title", "").strip()
+    author = data.get("author", "").strip()
+    if not title or not author:
+        return jsonify({"error": "title and author are required"}), 400
+    eta = data.get("eta", "").strip()
+    card = add_board_card(meeting_id, title, author, eta=eta)
+    return jsonify(card), 201
+
+
+@app.route("/api/meetings/<int:meeting_id>/board/<int:card_id>", methods=["PATCH"])
+def update_board_card(meeting_id, card_id):
+    data = request.get_json()
+    column_name = data.get("column_name", "").strip()
+    position = data.get("position", 0)
+    if not column_name:
+        return jsonify({"error": "column_name is required"}), 400
+    eta = data.get("eta")
+    if eta is not None:
+        eta = eta.strip()
+    card = move_board_card(meeting_id, card_id, column_name, position, eta=eta)
+    if not card:
+        return jsonify({"error": "card not found"}), 404
+    return jsonify(card)
+
+
+@app.route("/api/meetings/<int:meeting_id>/board/<int:card_id>", methods=["DELETE"])
+def remove_board_card(meeting_id, card_id):
+    if not delete_board_card(meeting_id, card_id):
+        return jsonify({"error": "card not found"}), 404
     return jsonify({"ok": True})
 
 
