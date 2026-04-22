@@ -206,6 +206,9 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# SQLite
+*.db
+
 # Node
 node_modules/
 
