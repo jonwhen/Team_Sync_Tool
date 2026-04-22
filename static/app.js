@@ -19,16 +19,53 @@ const noteInput = document.getElementById('note-input');
 const sendNoteBtn = document.getElementById('send-note-btn');
 const clearNotesBtn = document.getElementById('clear-notes-btn');
 
-let currentMeetingId = null;
-let renderedNoteIds = new Set();
-let notePollTimer = null;
-let boardPollTimer = null;
-
 // Board elements
 const boardCardInput = document.getElementById('board-card-input');
 const boardCardEta = document.getElementById('board-card-eta');
 const addCardBtn = document.getElementById('add-card-btn');
 const boardColumns = document.querySelectorAll('.board-column');
+
+// Timer elements
+const timerDisplay = document.getElementById('timer-display');
+const timerStartBtn = document.getElementById('timer-start-btn');
+const timerExtendBtn = document.getElementById('timer-extend-btn');
+const timerEndBtn = document.getElementById('timer-end-btn');
+
+// Shoutouts elements
+const shoutoutInput = document.getElementById('shoutout-input');
+const addShoutoutBtn = document.getElementById('add-shoutout-btn');
+const shoutoutsListEl = document.getElementById('shoutouts-list');
+const clearShoutoutsBtn = document.getElementById('clear-shoutouts-btn');
+
+// Attendees elements
+const attendeesListEl = document.getElementById('attendees-list');
+
+// Decisions elements
+const decisionInput = document.getElementById('decision-input');
+const addDecisionBtn = document.getElementById('add-decision-btn');
+const decisionsListEl = document.getElementById('decisions-list');
+const clearDecisionsBtn = document.getElementById('clear-decisions-btn');
+
+// Resources elements
+const resourceTitleInput = document.getElementById('resource-title-input');
+const resourceUrlInput = document.getElementById('resource-url-input');
+const addResourceBtn = document.getElementById('add-resource-btn');
+const resourcesListEl = document.getElementById('resources-list');
+const clearResourcesBtn = document.getElementById('clear-resources-btn');
+
+// Meeting selector
+const meetingSelect = document.getElementById('meeting-select');
+
+let currentMeetingId = null;
+let todayMeetingId = null;
+let renderedNoteIds = new Set();
+let pollTimer = null;
+
+// --- Timer state ---
+let timerInterval = null;
+let timerStartTime = null;
+let timerDuration = 60 * 60;
+let timerRunning = false;
 
 // --- Name handling ---
 
@@ -41,7 +78,7 @@ function initNamePrompt() {
   if (name) {
     nameOverlay.style.display = 'none';
     appDiv.style.display = 'flex';
-    loadOrCreateTodayMeeting();
+    ensureTodayMeeting();
   } else {
     nameOverlay.style.display = 'flex';
     appDiv.style.display = 'none';
@@ -56,8 +93,67 @@ nameForm.addEventListener('submit', (e) => {
   localStorage.setItem('userName', name);
   nameOverlay.style.display = 'none';
   appDiv.style.display = 'flex';
-  loadOrCreateTodayMeeting();
+  ensureTodayMeeting();
 });
+
+// --- Timer ---
+
+function formatTimer(totalSeconds) {
+  const negative = totalSeconds < 0;
+  const abs = Math.abs(totalSeconds);
+  const mins = Math.floor(abs / 60);
+  const secs = abs % 60;
+  const display = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+  return negative ? '-' + display : display;
+}
+
+function updateTimerDisplay() {
+  const elapsed = Math.floor((Date.now() - timerStartTime) / 1000);
+  const remaining = timerDuration - elapsed;
+
+  timerDisplay.textContent = formatTimer(remaining);
+
+  if (remaining <= 0) {
+    timerDisplay.className = 'timer-display-over';
+  } else {
+    timerDisplay.className = 'timer-display-active';
+  }
+}
+
+function startMeeting() {
+  timerDuration = 60 * 60;
+  timerStartTime = Date.now();
+  timerRunning = true;
+  timerStartBtn.style.display = 'none';
+  timerExtendBtn.style.display = '';
+  timerEndBtn.style.display = '';
+  timerDisplay.className = 'timer-display-active';
+  timerInterval = setInterval(updateTimerDisplay, 250);
+  updateTimerDisplay();
+}
+
+function extendMeeting() {
+  if (!timerRunning) return;
+  timerDuration += 15 * 60;
+  updateTimerDisplay();
+}
+
+function endMeeting() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerStartTime = null;
+  timerRunning = false;
+  timerDuration = 60 * 60;
+  timerDisplay.textContent = '60:00';
+  timerDisplay.className = 'timer-display-idle';
+  timerStartBtn.style.display = '';
+  timerExtendBtn.style.display = 'none';
+  timerEndBtn.style.display = 'none';
+}
+
+timerStartBtn.addEventListener('click', startMeeting);
+timerExtendBtn.addEventListener('click', extendMeeting);
+timerEndBtn.addEventListener('click', endMeeting);
 
 // --- Agenda ---
 
@@ -169,16 +265,270 @@ async function addNote() {
   noteInput.focus();
 }
 
-async function pollNotes() {
-  if (!currentMeetingId) return;
-  const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}/notes`);
-  const notes = await res.json();
-  notes.forEach((note) => renderNote(note));
+// --- Wins & Shoutouts ---
+
+function renderShoutout(shoutout) {
+  const entry = document.createElement('div');
+  entry.className = 'shoutout-entry';
+  entry.dataset.shoutoutId = shoutout.id;
+
+  const textDiv = document.createElement('div');
+  textDiv.className = 'shoutout-text';
+  textDiv.textContent = shoutout.text;
+
+  const meta = document.createElement('div');
+  meta.className = 'shoutout-meta';
+  const parts = [];
+  if (shoutout.author) parts.push(shoutout.author);
+  if (shoutout.created_at) parts.push(formatTime(shoutout.created_at));
+  meta.textContent = parts.join(' \u00b7 ');
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'shoutout-delete';
+  deleteBtn.textContent = '\u00d7';
+  deleteBtn.addEventListener('click', () => deleteShoutout(shoutout.id));
+
+  entry.appendChild(textDiv);
+  entry.appendChild(meta);
+  entry.appendChild(deleteBtn);
+  return entry;
 }
 
-// --- Load meeting ---
+function renderShoutouts(shoutouts) {
+  shoutoutsListEl.innerHTML = '';
+  shoutouts.forEach((s) => shoutoutsListEl.appendChild(renderShoutout(s)));
+}
 
-async function loadOrCreateTodayMeeting() {
+async function addShoutout() {
+  const text = shoutoutInput.value.trim();
+  if (!text || !currentMeetingId) return;
+  const author = getUserName() || '';
+
+  const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}/shoutouts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, author }),
+  });
+  const shoutout = await res.json();
+  shoutoutsListEl.appendChild(renderShoutout(shoutout));
+  shoutoutInput.value = '';
+  shoutoutInput.focus();
+}
+
+async function deleteShoutout(id) {
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/shoutouts/${id}`, {
+    method: 'DELETE',
+  });
+  const el = shoutoutsListEl.querySelector(`[data-shoutout-id="${id}"]`);
+  if (el) el.remove();
+}
+
+async function clearShoutouts() {
+  if (!currentMeetingId) return;
+  if (!confirm('Are you sure you want to clear all shoutouts?')) return;
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/shoutouts`, {
+    method: 'DELETE',
+  });
+  shoutoutsListEl.innerHTML = '';
+}
+
+// --- Attendees ---
+
+function renderAttendees(attendees) {
+  attendeesListEl.innerHTML = '';
+  attendees.forEach((a) => {
+    const pill = document.createElement('span');
+    pill.className = 'attendee-pill';
+    pill.textContent = a.name;
+    attendeesListEl.appendChild(pill);
+  });
+}
+
+async function registerCurrentUser() {
+  const name = getUserName();
+  if (!name || !currentMeetingId || currentMeetingId !== todayMeetingId) return;
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/attendees`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+}
+
+// --- Decisions Log ---
+
+function renderDecision(decision) {
+  const entry = document.createElement('div');
+  entry.className = 'decision-entry';
+  entry.dataset.decisionId = decision.id;
+
+  const icon = document.createElement('div');
+  icon.className = 'decision-icon';
+  icon.textContent = '\u2713';
+
+  const body = document.createElement('div');
+  body.className = 'decision-body';
+
+  const text = document.createElement('div');
+  text.className = 'decision-text';
+  text.textContent = decision.text;
+
+  const meta = document.createElement('div');
+  meta.className = 'decision-meta';
+  const parts = [];
+  if (decision.author) parts.push(decision.author);
+  if (decision.created_at) parts.push(formatTime(decision.created_at));
+  meta.textContent = parts.join(' \u00b7 ');
+
+  body.appendChild(text);
+  body.appendChild(meta);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'decision-delete';
+  deleteBtn.textContent = '\u00d7';
+  deleteBtn.addEventListener('click', () => deleteDecision(decision.id));
+
+  entry.appendChild(icon);
+  entry.appendChild(body);
+  entry.appendChild(deleteBtn);
+  return entry;
+}
+
+function renderDecisions(decisions) {
+  decisionsListEl.innerHTML = '';
+  decisions.forEach((d) => decisionsListEl.appendChild(renderDecision(d)));
+}
+
+async function addDecisionItem() {
+  const text = decisionInput.value.trim();
+  if (!text || !currentMeetingId) return;
+  const author = getUserName() || '';
+
+  const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}/decisions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, author }),
+  });
+  const decision = await res.json();
+  decisionsListEl.appendChild(renderDecision(decision));
+  decisionInput.value = '';
+  decisionInput.focus();
+}
+
+async function deleteDecision(id) {
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/decisions/${id}`, {
+    method: 'DELETE',
+  });
+  const el = decisionsListEl.querySelector(`[data-decision-id="${id}"]`);
+  if (el) el.remove();
+}
+
+async function clearDecisions() {
+  if (!currentMeetingId) return;
+  if (!confirm('Are you sure you want to clear all decisions?')) return;
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/decisions`, {
+    method: 'DELETE',
+  });
+  decisionsListEl.innerHTML = '';
+}
+
+// --- Resources ---
+
+function renderResource(resource) {
+  const entry = document.createElement('div');
+  entry.className = 'resource-entry';
+  entry.dataset.resourceId = resource.id;
+
+  const icon = document.createElement('div');
+  icon.className = 'resource-icon';
+  icon.textContent = resource.url ? '\u{1F517}' : '\u{1F4C4}';
+
+  const body = document.createElement('div');
+  body.className = 'resource-body';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'resource-title';
+  if (resource.url) {
+    const link = document.createElement('a');
+    link.href = resource.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = resource.title;
+    titleEl.appendChild(link);
+  } else {
+    titleEl.textContent = resource.title;
+  }
+
+  body.appendChild(titleEl);
+
+  if (resource.url) {
+    const urlEl = document.createElement('div');
+    urlEl.className = 'resource-url';
+    urlEl.textContent = resource.url;
+    body.appendChild(urlEl);
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'resource-meta';
+  const parts = [];
+  if (resource.added_by) parts.push(resource.added_by);
+  if (resource.created_at) parts.push(formatTime(resource.created_at));
+  meta.textContent = parts.join(' \u00b7 ');
+  body.appendChild(meta);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'resource-delete';
+  deleteBtn.textContent = '\u00d7';
+  deleteBtn.addEventListener('click', () => deleteResource(resource.id));
+
+  entry.appendChild(icon);
+  entry.appendChild(body);
+  entry.appendChild(deleteBtn);
+  return entry;
+}
+
+function renderResources(resources) {
+  resourcesListEl.innerHTML = '';
+  resources.forEach((r) => resourcesListEl.appendChild(renderResource(r)));
+}
+
+async function addResource() {
+  const title = resourceTitleInput.value.trim();
+  if (!title || !currentMeetingId) return;
+  const url = resourceUrlInput.value.trim();
+  const added_by = getUserName() || '';
+
+  const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}/resources`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, url, added_by }),
+  });
+  const resource = await res.json();
+  resourcesListEl.appendChild(renderResource(resource));
+  resourceTitleInput.value = '';
+  resourceUrlInput.value = '';
+  resourceTitleInput.focus();
+}
+
+async function deleteResource(id) {
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/resources/${id}`, {
+    method: 'DELETE',
+  });
+  const el = resourcesListEl.querySelector(`[data-resource-id="${id}"]`);
+  if (el) el.remove();
+}
+
+async function clearResources() {
+  if (!currentMeetingId) return;
+  if (!confirm('Are you sure you want to clear all resources?')) return;
+  await fetch(`${API_BASE}/meetings/${currentMeetingId}/resources`, {
+    method: 'DELETE',
+  });
+  resourcesListEl.innerHTML = '';
+}
+
+// --- Meeting History & Loading ---
+
+async function ensureTodayMeeting() {
   const today = new Date().toISOString().split('T')[0];
 
   const res = await fetch(`${API_BASE}/meetings`);
@@ -186,7 +536,7 @@ async function loadOrCreateTodayMeeting() {
   const todayMeeting = meetings.find((m) => m.date === today);
 
   if (todayMeeting) {
-    currentMeetingId = todayMeeting.id;
+    todayMeetingId = todayMeeting.id;
   } else {
     const createRes = await fetch(`${API_BASE}/meetings`, {
       method: 'POST',
@@ -194,34 +544,131 @@ async function loadOrCreateTodayMeeting() {
       body: JSON.stringify({ title: 'Team Sync', date: today }),
     });
     const newMeeting = await createRes.json();
-    currentMeetingId = newMeeting.id;
+    todayMeetingId = newMeeting.id;
+    meetings.unshift(newMeeting);
   }
+
+  // Populate meeting selector dropdown
+  meetingSelect.innerHTML = '';
+  const allMeetings = meetings.sort((a, b) => b.date.localeCompare(a.date));
+  allMeetings.forEach((m) => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    const d = new Date(m.date + 'T00:00:00');
+    const label = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    opt.textContent = m.title + ' — ' + label + (m.id === todayMeetingId ? ' (Today)' : '');
+    meetingSelect.appendChild(opt);
+  });
+
+  meetingSelect.value = todayMeetingId;
+  await loadMeeting(todayMeetingId);
+}
+
+async function loadMeeting(meetingId) {
+  currentMeetingId = meetingId;
 
   const meetingRes = await fetch(`${API_BASE}/meetings/${currentMeetingId}`);
   const meeting = await meetingRes.json();
 
+  // Agenda
   list.innerHTML = '';
   meeting.items.forEach((item) => renderItem(item));
   updateEmpty();
 
-  // Load notes
+  // Notes
   renderedNoteIds.clear();
   notesList.innerHTML = '';
   if (meeting.notes) {
     meeting.notes.forEach((note) => renderNote(note));
   }
 
-  // Load board
+  // Board
   if (meeting.board_cards) {
     renderBoard(meeting.board_cards);
   }
   initBoardDragDrop();
 
-  // Start polling for new notes and board updates
-  if (notePollTimer) clearInterval(notePollTimer);
-  notePollTimer = setInterval(pollNotes, 5000);
-  if (boardPollTimer) clearInterval(boardPollTimer);
-  boardPollTimer = setInterval(pollBoard, 5000);
+  // Shoutouts
+  if (meeting.shoutouts) {
+    renderShoutouts(meeting.shoutouts);
+  } else {
+    shoutoutsListEl.innerHTML = '';
+  }
+
+  // Attendees
+  if (meeting.attendees) {
+    renderAttendees(meeting.attendees);
+  } else {
+    attendeesListEl.innerHTML = '';
+  }
+
+  // Decisions
+  if (meeting.decisions && decisionsListEl) {
+    renderDecisions(meeting.decisions);
+  }
+
+  // Resources
+  if (meeting.resources) {
+    renderResources(meeting.resources);
+  } else {
+    resourcesListEl.innerHTML = '';
+  }
+
+  // Register current user as attendee for today's meeting
+  await registerCurrentUser();
+
+  // Re-fetch attendees to include current user
+  if (currentMeetingId === todayMeetingId) {
+    const attRes = await fetch(`${API_BASE}/meetings/${currentMeetingId}/attendees`);
+    const attendees = await attRes.json();
+    renderAttendees(attendees);
+  }
+
+  // Start consolidated polling
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollMeeting, 5000);
+}
+
+meetingSelect.addEventListener('change', () => {
+  loadMeeting(parseInt(meetingSelect.value));
+});
+
+// --- Consolidated polling ---
+
+async function pollMeeting() {
+  if (!currentMeetingId) return;
+  const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}`);
+  const meeting = await res.json();
+
+  // Poll notes (append-only)
+  if (meeting.notes) {
+    meeting.notes.forEach((note) => renderNote(note));
+  }
+
+  // Poll board (full re-render)
+  if (meeting.board_cards) {
+    renderBoard(meeting.board_cards);
+  }
+
+  // Poll shoutouts (full re-render)
+  if (meeting.shoutouts) {
+    renderShoutouts(meeting.shoutouts);
+  }
+
+  // Poll attendees
+  if (meeting.attendees) {
+    renderAttendees(meeting.attendees);
+  }
+
+  // Poll decisions
+  if (meeting.decisions && decisionsListEl) {
+    renderDecisions(meeting.decisions);
+  }
+
+  // Poll resources
+  if (meeting.resources) {
+    renderResources(meeting.resources);
+  }
 }
 
 // --- Board ---
@@ -384,13 +831,6 @@ async function deleteBoardCard(cardId) {
   if (el) el.remove();
 }
 
-async function pollBoard() {
-  if (!currentMeetingId) return;
-  const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}/board`);
-  const cards = await res.json();
-  renderBoard(cards);
-}
-
 async function clearNotes() {
   if (!currentMeetingId) return;
   if (!confirm('Are you sure you want to clear all meeting notes?')) return;
@@ -455,5 +895,26 @@ addCardBtn.addEventListener('click', addBoardCard);
 boardCardInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addBoardCard();
 });
+
+addShoutoutBtn.addEventListener('click', addShoutout);
+shoutoutInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addShoutout();
+});
+clearShoutoutsBtn.addEventListener('click', clearShoutouts);
+
+if (addDecisionBtn) addDecisionBtn.addEventListener('click', addDecisionItem);
+if (decisionInput) decisionInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addDecisionItem();
+});
+if (clearDecisionsBtn) clearDecisionsBtn.addEventListener('click', clearDecisions);
+
+addResourceBtn.addEventListener('click', addResource);
+resourceTitleInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addResource();
+});
+resourceUrlInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addResource();
+});
+clearResourcesBtn.addEventListener('click', clearResources);
 
 initNamePrompt();

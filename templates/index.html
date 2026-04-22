@@ -37,12 +37,66 @@
         <button class="tab-btn active" id="tab-btn-meeting">Meeting</button>
         <button class="tab-btn" id="tab-btn-board">Project Board</button>
       </div>
+      <div class="meeting-selector">
+        <select id="meeting-select"></select>
+      </div>
     </header>
 
+    <!-- Fixed top-right timer -->
+    <div class="timer-fixed" id="timer-container">
+      <span id="timer-display" class="timer-display-idle">60:00</span>
+      <button class="timer-btn-start" id="timer-start-btn">Start Meeting</button>
+      <button class="timer-btn-extend" id="timer-extend-btn" style="display:none">+15m</button>
+      <button class="timer-btn-end" id="timer-end-btn" style="display:none">End</button>
+    </div>
+
     <div id="tab-meeting">
-      <div class="app-content">
-        <!-- Left column: agenda -->
-        <main class="agenda-card bg-white rounded-xl shadow-md p-6">
+
+      <!-- Attendees bar -->
+      <div class="attendees-bar">
+        <span class="attendees-label">Attendees:</span>
+        <div id="attendees-list"></div>
+      </div>
+
+      <!-- 3-column meeting layout -->
+      <div class="meeting-grid">
+        <!-- Left column: Resources -->
+        <section class="resources-card bg-white rounded-xl shadow-md p-6">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-sm font-semibold text-gray-600">Resources</h2>
+            <button
+              class="px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors cursor-pointer"
+              id="clear-resources-btn"
+            >Clear</button>
+          </div>
+          <div class="flex gap-2 mb-2">
+            <input
+              type="text"
+              id="resource-title-input"
+              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              placeholder="Title or description..."
+            >
+          </div>
+          <div class="flex gap-2 mb-4">
+            <input
+              type="text"
+              id="resource-url-input"
+              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              placeholder="URL (optional)"
+            >
+            <button
+              class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
+              id="add-resource-btn"
+            >Add</button>
+          </div>
+          <div class="resources-list-scroll">
+            <div id="resources-list"></div>
+          </div>
+        </section>
+
+        <!-- Center column: Agenda (top) + Action Items (bottom) -->
+        <div class="center-column">
+          <main class="agenda-card bg-white rounded-xl shadow-md p-6">
             <div class="flex justify-between items-center mb-3">
               <h2 class="text-sm font-semibold text-gray-600">Agenda</h2>
               <button
@@ -66,9 +120,35 @@
             <div class="agenda-list-scroll">
               <ol class="list-none p-0" id="agenda-list"></ol>
             </div>
-        </main>
+          </main>
 
-        <!-- Right column: notes -->
+          <div class="shoutouts-card bg-white rounded-xl shadow-md p-6">
+            <div class="flex justify-between items-center mb-3">
+              <h2 class="text-sm font-semibold text-gray-600">Wins & Shoutouts</h2>
+              <button
+                class="px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                id="clear-shoutouts-btn"
+              >Clear</button>
+            </div>
+            <div class="flex gap-2 mb-4">
+              <input
+                type="text"
+                id="shoutout-input"
+                class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                placeholder="Share a win or shoutout a teammate..."
+              >
+              <button
+                class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
+                id="add-shoutout-btn"
+              >Post</button>
+            </div>
+            <div class="shoutouts-list-scroll">
+              <div id="shoutouts-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column: Meeting Notes -->
         <section class="notes-card bg-white rounded-xl shadow-md p-6">
           <div class="flex justify-between items-center mb-3">
             <h2 class="text-sm font-semibold text-gray-600">Meeting Notes</h2>
