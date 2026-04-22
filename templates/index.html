@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Sync Tool</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>Team Sync Tool</h1>
+      <p>Meeting Agenda</p>
+    </header>
+    <main class="agenda">
+      <div class="agenda-input-row">
+        <input
+          type="text"
+          id="agenda-input"
+          class="agenda-input"
+          placeholder="Add an agenda item..."
+        >
+        <button class="agenda-add-btn" id="add-btn">Add</button>
+      </div>
+      <p class="agenda-empty" id="empty-msg">No agenda items yet. Add one above.</p>
+      <ol class="agenda-list" id="agenda-list"></ol>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
