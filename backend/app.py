@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from database import init_db, get_meetings_past_week, create_meeting, get_meeting_with_items, add_agenda_item, toggle_item_checked
+from database import init_db, get_meetings_past_week, create_meeting, get_meeting_with_items, add_agenda_item, toggle_item_checked, get_notes, add_note, delete_notes
 
 app = Flask(__name__)
 
@@ -8,7 +8,7 @@ app = Flask(__name__)
 def add_cors_headers(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, OPTIONS"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS"
     return response
 
 init_db()
@@ -54,6 +54,28 @@ def toggle_item(meeting_id, item_id):
     if not item:
         return jsonify({"error": "item not found"}), 404
     return jsonify(item)
+
+
+@app.route("/api/meetings/<int:meeting_id>/notes", methods=["GET"])
+def list_notes(meeting_id):
+    return jsonify(get_notes(meeting_id))
+
+
+@app.route("/api/meetings/<int:meeting_id>/notes", methods=["POST"])
+def new_note(meeting_id):
+    data = request.get_json()
+    author = data.get("author", "").strip()
+    text = data.get("text", "").strip()
+    if not author or not text:
+        return jsonify({"error": "author and text are required"}), 400
+    note = add_note(meeting_id, author, text)
+    return jsonify(note), 201
+
+
+@app.route("/api/meetings/<int:meeting_id>/notes", methods=["DELETE"])
+def clear_notes(meeting_id):
+    delete_notes(meeting_id)
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":

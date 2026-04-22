@@ -4,27 +4,81 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Team Sync Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
-  <div class="app">
-    <header class="app-header">
-      <h1>Team Sync Tool</h1>
-      <p>Meeting Agenda</p>
-    </header>
-    <main class="agenda">
-      <div class="agenda-input-row">
+<body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
+  <!-- Name prompt overlay -->
+  <div id="name-overlay" class="name-overlay">
+    <div class="name-card">
+      <h2 class="text-lg font-bold mb-2">Welcome to Team Sync</h2>
+      <p class="text-gray-500 text-sm mb-4">Enter your name to join the meeting.</p>
+      <form id="name-form" class="flex gap-2">
         <input
           type="text"
-          id="agenda-input"
-          class="agenda-input"
-          placeholder="Add an agenda item..."
+          id="name-input"
+          class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+          placeholder="Your name"
+          required
         >
-        <button class="agenda-add-btn" id="add-btn">Add</button>
-      </div>
-      <p class="agenda-empty" id="empty-msg">No agenda items yet. Add one above.</p>
-      <ol class="agenda-list" id="agenda-list"></ol>
-    </main>
+        <button
+          type="submit"
+          class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
+        >Join</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main app (hidden until name is entered) -->
+  <div id="app" class="app-layout" style="display:none">
+    <header class="text-center mb-6">
+      <h1 class="text-2xl font-bold">Team Sync Tool</h1>
+      <p class="text-gray-500 mt-1 text-sm">Meeting Agenda</p>
+    </header>
+
+    <div class="app-content">
+      <!-- Left column: agenda -->
+      <main class="agenda-card bg-white rounded-xl shadow-md p-6">
+          <div class="flex gap-2 mb-4" id="agenda-input-row">
+            <input
+              type="text"
+              id="agenda-input"
+              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              placeholder="Add an agenda item..."
+            >
+            <button
+              class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
+              id="add-btn"
+            >Add</button>
+          </div>
+          <p class="text-center text-gray-400 italic py-6 text-sm" id="empty-msg">No agenda items yet. Add one above.</p>
+          <ol class="list-none p-0" id="agenda-list"></ol>
+        </main>
+
+      <!-- Right column: notes -->
+      <section class="notes-card bg-white rounded-xl shadow-md p-6">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-sm font-semibold text-gray-600">Meeting Notes</h2>
+          <button
+            class="px-2 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors cursor-pointer"
+            id="clear-notes-btn"
+          >Clear</button>
+        </div>
+        <div id="notes-list" class="notes-list"></div>
+        <div class="flex gap-2 mt-3">
+          <input
+            type="text"
+            id="note-input"
+            class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+            placeholder="Add a note..."
+          >
+          <button
+            class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
+            id="send-note-btn"
+          >Send</button>
+        </div>
+      </section>
+    </div>
   </div>
   <script src="/static/app.js"></script>
 </body>

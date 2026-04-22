@@ -29,6 +29,14 @@ def init_db():
             position INTEGER NOT NULL,
             FOREIGN KEY (meeting_id) REFERENCES meetings(id)
         );
+        CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            meeting_id INTEGER NOT NULL,
+            author TEXT NOT NULL,
+            text TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (meeting_id) REFERENCES meetings(id)
+        );
     """)
     conn.close()
 
@@ -66,9 +74,14 @@ def get_meeting_with_items(meeting_id):
         "SELECT * FROM agenda_items WHERE meeting_id = ? ORDER BY position",
         (meeting_id,),
     ).fetchall()
+    notes = conn.execute(
+        "SELECT * FROM notes WHERE meeting_id = ? ORDER BY created_at",
+        (meeting_id,),
+    ).fetchall()
     conn.close()
     result = dict(meeting)
     result["items"] = [dict(i) for i in items]
+    result["notes"] = [dict(n) for n in notes]
     return result
 
 
@@ -111,3 +124,35 @@ def toggle_item_checked(meeting_id, item_id):
     ).fetchone()
     conn.close()
     return dict(updated)
+
+
+def get_notes(meeting_id):
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM notes WHERE meeting_id = ? ORDER BY created_at",
+        (meeting_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def add_note(meeting_id, author, text):
+    conn = get_connection()
+    created_at = datetime.now().isoformat()
+    cur = conn.execute(
+        "INSERT INTO notes (meeting_id, author, text, created_at) VALUES (?, ?, ?, ?)",
+        (meeting_id, author, text, created_at),
+    )
+    conn.commit()
+    note = conn.execute(
+        "SELECT * FROM notes WHERE id = ?", (cur.lastrowid,)
+    ).fetchone()
+    conn.close()
+    return dict(note)
+
+
+def delete_notes(meeting_id):
+    conn = get_connection()
+    conn.execute("DELETE FROM notes WHERE meeting_id = ?", (meeting_id,))
+    conn.commit()
+    conn.close()
