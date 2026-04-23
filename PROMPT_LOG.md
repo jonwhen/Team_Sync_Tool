@@ -47,3 +47,17 @@ This log tracks each prompt used during development and how the output was appli
 - **Details:** Added a "Clear" button in the notes card header. Clicking it shows a browser confirm dialog before deleting all notes for the current meeting. Added a DELETE endpoint and `delete_notes` DB function.
 - **Output Applied:** Added clear button to HTML, DELETE `/api/meetings/<id>/notes` endpoint, `delete_notes()` function in database, and `clearNotes()` JS function with confirmation.
 - **Files Changed:** `backend/database.py`, `backend/app.py`, `templates/index.html`, `static/app.js`
+
+## Prompt #7
+
+- **Prompt Summary:** Add AI-powered meeting summary on end meeting.
+- **Details:** When the user clicks "End" on the meeting timer, the app gathers all meeting data and sends it to the Claude API for summarization. A new `backend/summarize.py` module calls `claude-sonnet-4-20250514` with a structured prompt covering attendees, agenda, notes, decisions, resources, shoutouts, and project board status. A POST `/api/meetings/<id>/summary` endpoint returns the summary text and a filename. The frontend shows a loading overlay with a spinner, then triggers a `.txt` file download via Blob URL. Added `anthropic` and `python-dotenv` to `requirements.txt`, created a `.env` file for the API key, and wired up `load_dotenv()` in `app.py`.
+- **Output Applied:** Created summarize module, added summary endpoint, updated JS `endMeeting()` to call the API and download the file, added overlay markup and CSS spinner styles.
+- **Files Changed:** `backend/summarize.py` (created), `backend/app.py`, `static/app.js`, `static/style.css`, `templates/index.html`, `requirements.txt`, `.env` (created)
+
+## Prompt #8
+
+- **Prompt Summary:** Add 3-option end meeting dialog (AI summary, template summary, just end).
+- **Details:** Replaced the simple confirm dialog with a styled overlay presenting three choices: "AI Summary" (requires Anthropic API key), "Template Summary" (no API key needed, formats raw meeting data into structured plain text), and "Just End" (resets timer only). Added a new POST `/api/meetings/<id>/template-summary` endpoint that builds a plain-text summary from all meeting data using string formatting. The frontend uses a choice overlay with styled buttons, then shows the loading spinner overlay only when generating a summary.
+- **Output Applied:** Added template-summary endpoint to `app.py`, replaced confirm dialog with a choice overlay in HTML, refactored JS into `generateSummary()` helper with separate button handlers, added button styles to CSS.
+- **Files Changed:** `backend/app.py`, `static/app.js`, `static/style.css`, `templates/index.html`

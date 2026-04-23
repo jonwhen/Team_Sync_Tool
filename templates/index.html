@@ -33,6 +33,27 @@
     </div>
   </div>
 
+  <!-- End meeting choice overlay -->
+  <div id="end-meeting-overlay" class="summary-overlay" style="display:none">
+    <div class="summary-card">
+      <h3 class="text-base font-semibold text-gray-800 mb-1">End Meeting</h3>
+      <p class="text-sm text-gray-500 mb-4">Would you like to generate a summary?</p>
+      <div class="end-meeting-buttons">
+        <button id="end-ai-btn" class="end-btn end-btn-ai">AI Summary</button>
+        <button id="end-template-btn" class="end-btn end-btn-template">Template Summary</button>
+        <button id="end-skip-btn" class="end-btn end-btn-skip">Just End</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary loading overlay -->
+  <div id="summary-overlay" class="summary-overlay" style="display:none">
+    <div class="summary-card">
+      <div class="summary-spinner"></div>
+      <p class="text-sm text-gray-600 mt-3">Generating meeting summary...</p>
+    </div>
+  </div>
+
   <!-- Main app (hidden until name is entered) -->
   <div id="app" class="app-layout" style="display:none">
     <header class="app-header">
@@ -200,7 +221,7 @@
             <button
               class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer"
               id="add-card-btn"
-            >Add Card</button>
+            >Add Project</button>
           </div>
         </div>
         <div class="board-columns">

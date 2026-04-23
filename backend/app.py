@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, jsonify, request
 from database import (
     init_db, get_meetings_past_week, create_meeting, get_meeting_with_items,
@@ -9,6 +12,7 @@ from database import (
     delete_decision, delete_decisions, add_resource, delete_resource,
     delete_resources, add_shoutout, delete_shoutout, delete_shoutouts,
 )
+from summarize import generate_summary
 
 app = Flask(__name__)
 
@@ -252,6 +256,117 @@ def remove_shoutout(meeting_id, shoutout_id):
 def clear_all_shoutouts(meeting_id):
     delete_shoutouts(meeting_id)
     return jsonify({"ok": True})
+
+
+@app.route("/api/meetings/<int:meeting_id>/summary", methods=["POST"])
+def meeting_summary(meeting_id):
+    meeting = get_meeting_with_items(meeting_id)
+    if not meeting:
+        return jsonify({"error": "meeting not found"}), 404
+    try:
+        summary = generate_summary(meeting)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": f"Summary generation failed: {e}"}), 500
+    date = meeting.get("date", "unknown")
+    filename = f"Team_Sync_{date}.txt"
+    return jsonify({"summary": summary, "filename": filename})
+
+
+@app.route("/api/meetings/<int:meeting_id>/template-summary", methods=["POST"])
+def meeting_template_summary(meeting_id):
+    meeting = get_meeting_with_items(meeting_id)
+    if not meeting:
+        return jsonify({"error": "meeting not found"}), 404
+
+    title = meeting.get("title", "Untitled Meeting")
+    date = meeting.get("date", "Unknown date")
+    attendees = meeting.get("attendees", [])
+    items = meeting.get("items", [])
+    notes = meeting.get("notes", [])
+    decisions = meeting.get("decisions", [])
+    resources = meeting.get("resources", [])
+    shoutouts = meeting.get("shoutouts", [])
+    board_cards = meeting.get("board_cards", [])
+
+    lines = []
+    lines.append(f"{title}")
+    lines.append(f"Date: {date}")
+    lines.append("=" * 50)
+
+    if attendees:
+        lines.append("")
+        lines.append("ATTENDEES")
+        lines.append("-" * 30)
+        lines.append(", ".join(a["name"] for a in attendees))
+
+    if resources:
+        lines.append("")
+        lines.append("RESOURCES SHARED")
+        lines.append("-" * 30)
+        for r in resources:
+            line = f"  - {r['title']}"
+            if r.get("url"):
+                line += f"  ({r['url']})"
+            lines.append(line)
+
+    if items:
+        lines.append("")
+        lines.append("AGENDA")
+        lines.append("-" * 30)
+        for item in items:
+            status = "[x]" if item.get("checked") else "[ ]"
+            lines.append(f"  {status} {item['text']}")
+
+    if notes:
+        lines.append("")
+        lines.append("MEETING NOTES")
+        lines.append("-" * 30)
+        for n in notes:
+            lines.append(f"  [{n.get('created_at', '')}] {n['author']}: {n['text']}")
+
+    if decisions:
+        lines.append("")
+        lines.append("DECISIONS")
+        lines.append("-" * 30)
+        for d in decisions:
+            author = f" (by {d['author']})" if d.get("author") else ""
+            lines.append(f"  - {d['text']}{author}")
+
+    if shoutouts:
+        lines.append("")
+        lines.append("WINS & SHOUTOUTS")
+        lines.append("-" * 30)
+        for s in shoutouts:
+            author = f" (by {s['author']})" if s.get("author") else ""
+            lines.append(f"  - {s['text']}{author}")
+
+    if board_cards:
+        lines.append("")
+        lines.append("PROJECT BOARD")
+        lines.append("-" * 30)
+        columns = {}
+        for card in board_cards:
+            col = card.get("column_name", "unknown")
+            columns.setdefault(col, []).append(card)
+        column_labels = {
+            "todo": "To Do", "in_progress": "In Progress",
+            "in_review": "In Review", "blocked": "Blocked",
+            "parking_lot": "Parking Lot", "done": "Done",
+        }
+        for col_key, label in column_labels.items():
+            cards = columns.get(col_key, [])
+            if cards:
+                lines.append(f"  {label}:")
+                for c in cards:
+                    eta = f" (ETA: {c['eta']})" if c.get("eta") else ""
+                    lines.append(f"    - {c['title']} [{c['author']}]{eta}")
+
+    lines.append("")
+    summary = "\n".join(lines)
+    filename = f"Team_Sync_{date}.txt"
+    return jsonify({"summary": summary, "filename": filename})
 
 
 if __name__ == "__main__":

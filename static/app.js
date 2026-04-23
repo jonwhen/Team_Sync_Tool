@@ -138,7 +138,19 @@ function extendMeeting() {
   updateTimerDisplay();
 }
 
-function endMeeting() {
+function downloadTextFile(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function resetTimer() {
   clearInterval(timerInterval);
   timerInterval = null;
   timerStartTime = null;
@@ -150,6 +162,55 @@ function endMeeting() {
   timerExtendBtn.style.display = 'none';
   timerEndBtn.style.display = 'none';
 }
+
+async function generateSummary(endpoint) {
+  const overlay = document.getElementById('summary-overlay');
+  overlay.style.display = 'flex';
+
+  try {
+    const res = await fetch(`${API_BASE}/meetings/${currentMeetingId}/${endpoint}`, {
+      method: 'POST',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Summary generation failed');
+    }
+    downloadTextFile(data.filename, data.summary);
+  } catch (err) {
+    alert('Could not generate meeting summary: ' + err.message);
+  } finally {
+    overlay.style.display = 'none';
+  }
+}
+
+function endMeeting() {
+  clearInterval(timerInterval);
+
+  if (!currentMeetingId) {
+    resetTimer();
+    return;
+  }
+
+  const choiceOverlay = document.getElementById('end-meeting-overlay');
+  choiceOverlay.style.display = 'flex';
+}
+
+document.getElementById('end-ai-btn').addEventListener('click', async () => {
+  document.getElementById('end-meeting-overlay').style.display = 'none';
+  await generateSummary('summary');
+  resetTimer();
+});
+
+document.getElementById('end-template-btn').addEventListener('click', async () => {
+  document.getElementById('end-meeting-overlay').style.display = 'none';
+  await generateSummary('template-summary');
+  resetTimer();
+});
+
+document.getElementById('end-skip-btn').addEventListener('click', () => {
+  document.getElementById('end-meeting-overlay').style.display = 'none';
+  resetTimer();
+});
 
 timerStartBtn.addEventListener('click', startMeeting);
 timerExtendBtn.addEventListener('click', extendMeeting);
