@@ -1,5 +1,7 @@
 # Prompt Log - Team Sync Tool
 
+**AI Model Used:** Claude Opus 4.6 (`claude-opus-4-6`) by Anthropic
+
 This log tracks each prompt used during development and how the output was applied.
 
 ---
