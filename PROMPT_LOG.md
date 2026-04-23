@@ -61,3 +61,10 @@ This log tracks each prompt used during development and how the output was appli
 - **Details:** Replaced the simple confirm dialog with a styled overlay presenting three choices: "AI Summary" (requires Anthropic API key), "Template Summary" (no API key needed, formats raw meeting data into structured plain text), and "Just End" (resets timer only). Added a new POST `/api/meetings/<id>/template-summary` endpoint that builds a plain-text summary from all meeting data using string formatting. The frontend uses a choice overlay with styled buttons, then shows the loading spinner overlay only when generating a summary.
 - **Output Applied:** Added template-summary endpoint to `app.py`, replaced confirm dialog with a choice overlay in HTML, refactored JS into `generateSummary()` helper with separate button handlers, added button styles to CSS.
 - **Files Changed:** `backend/app.py`, `static/app.js`, `static/style.css`, `templates/index.html`
+
+## Prompt #9
+
+- **Prompt Summary:** Write a comprehensive README for the project.
+- **Details:** Created a full README covering: a summary of what Team Sync Tool is and how it promotes team collaboration, a complete feature list (agenda, notes, project board, timer, shoutouts, decisions, resources, attendees, meeting history, meeting summaries), step-by-step setup instructions (git clone, make install, .env configuration for Anthropic API key, make start, opening localhost:3000), a full architecture breakdown split into Frontend (HTML/JS/CSS), Middleware (Node.js/Hono), and Backend (Python/Flask/SQLite) with table descriptions of every file, and a section on creative and feature decisions with reasoning (3-column layout, name prompt over auth, polling over WebSockets, three summary options, built-in kanban, overtime pulse, 7-day history, SQLite).
+- **Output Applied:** Replaced the placeholder `README.md` with the full documentation.
+- **Files Changed:** `README.md`
